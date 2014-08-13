@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Results</title>
+
+      <style type="text/css">
+        table.center {
+          margin-left:auto; 
+          margin-right:auto;
+          padding: 15px;
+          background-color: #eeeeee;
+          width: 40%;
+        }
+      </style>
+  </head>
+  <body>
+    <div id="container" style="text-align: center">
+      <div id="round">
+        <table class="center" style="text-align: left">
+          <tr><td>Round started:</td><td id="round_start"></td></tr>
+          <tr><td>Round:</td><td id="round_number"></td></tr>
+        </table>
+      </div>
+      <div id="results">
+        <table class="center" id="results_table">
+          <tr><th>Player</th><th>Time</th><th>Contacts</th></tr>
+        </table>
+      </div>
+
+      <div id="button_container">
+        <input type="button" value="Get results" class="button" />
+      </div>
+    </div>
+
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+  </body>
+</html>
+

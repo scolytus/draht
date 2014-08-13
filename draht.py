@@ -24,11 +24,12 @@
 import RPi.GPIO as GPIO
 import time
 import logging
+import json
 
 from subprocess import call
 from collections import deque
 from threading import RLock
-from os import devnull
+from os import devnull, symlink, unlink
 
 # ==============================================================================
 # Class declarations
@@ -57,8 +58,8 @@ class State:
             return "UNKNOWN"
 
 class WirePlayer:
-    default_error_sound = "/home/pi/horn.wav"
-    default_finish_sound = "/home/pi/horn.wav"
+    default_error_sound = "/home/pi/draht/sounds/horn.wav"
+    default_finish_sound = "/home/pi/draht/sounds/horn.wav"
 
     def __init__(self, id, start_chan, wire_chan, stop_chan):
         self.id = id
@@ -77,7 +78,7 @@ class WirePlayer:
         self.error_sound = self.default_error_sound
         self.finish_sound = self.default_finish_sound
 
-        GPIO.add_event_detect(self.wire_chan, GPIO.RISING, callback=self, bouncetime=200)
+        GPIO.add_event_detect(self.wire_chan, GPIO.RISING, callback=self, bouncetime=500)
 
     # --------------------------------------------------------------------------
     # Count events
@@ -168,7 +169,14 @@ class WireGame:
         while True:
             round = WireGameRound(self.players)
             round.run()
-         
+            filename = "/home/pi/draht/web/%s.json" % round.round_id()
+            linkname = "/home/pi/draht/web/latest.json"
+            with open(filename, "w") as f:
+                f.write(round.json())
+            unlink(linkname)
+            symlink(filename, linkname)
+            logging.debug("result JSON written to %s" % filename)
+
 # ------------------------------------------------------------------------------
 class WireGameRound:
     round = 0;
@@ -206,6 +214,16 @@ class WireGameRound:
         logging.info("Round #%d ended" % self.round)
         for player in self.players:
             logging.info("    %s" % player.result())
+
+    def json(self):
+        result = {"start" : time.strftime("%d.%m.%Y %H:%M:%S", time.gmtime(self.start)), "round" : self.round, "results" : []}
+        for player in self.players:
+            result["results"].append({"id" : player.id, "time" : "%f" % (player.stop_time - player.start_time), "contacts" : player.contacts})
+
+        return json.dumps(result)
+
+    def round_id(self):
+        return "%s--%d" % (time.strftime("%Y%m%d%H%M%S", time.gmtime(self.start)), self.round)
 
 # ==============================================================================
 # Start of script
@@ -245,7 +263,7 @@ p2 = WirePlayer("Spieler 2", P2_STRT, P2_WIRE, P2_STOP)
 
 # customize settings
 
-p2.error_sound = "/home/pi/buzz.wav"
+p2.error_sound = "/home/pi/draht/sounds/buzz.wav"
 
 # create the game object
 
