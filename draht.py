@@ -258,12 +258,12 @@ for channel in [P1_STRT, P1_WIRE, P1_STOP, P2_STRT, P2_WIRE, P2_STOP]:
 
 # Create the player objects
 
-p1 = WirePlayer("Spieler 1", P1_STRT, P1_WIRE, P1_STOP)
-p2 = WirePlayer("Spieler 2", P2_STRT, P2_WIRE, P2_STOP)
+p1 = WirePlayer("Player 1", P1_STRT, P1_WIRE, P1_STOP)
+p2 = WirePlayer("Player 2", P2_STRT, P2_WIRE, P2_STOP)
 
 # customize settings
 
-p2.error_sound = "/home/pi/draht/sounds/buzz.wav"
+# p2.error_sound = "/home/pi/draht/sounds/buzz.wav"
 
 # create the game object
 
