@@ -223,7 +223,7 @@ class WireGameRound:
         return json.dumps(result)
 
     def round_id(self):
-        return "%s--%d" % (time.strftime("%Y%m%d%H%M%S", time.gmtime(self.start)), self.round)
+        return "%s--%03d" % (time.strftime("%Y%m%d%H%M%S", time.gmtime(self.start)), self.round)
 
 # ==============================================================================
 # Start of script
