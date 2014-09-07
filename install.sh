@@ -23,7 +23,7 @@ inf "check install directory"
 
 inf "check needed applications"
 which gatling || err "gatling not installed - run 'apt-get install gatling'"
-which aplay   || err "aplay not installed - run 'apt-get install alsaplayer'"
+which aplay   || err "aplay not installed - run 'apt-get install alsa-utils'"
 
 inf "download .zip from github.com"
 wget https://github.com/scolytus/draht/archive/master.zip -O "${ZIP}" || err "can't download draht.zip"
