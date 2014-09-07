@@ -22,20 +22,21 @@ inf "check install directory"
 [[ -d "${DEST}" ]] || mkdir "${DEST}" || err "can't create ${DEST}"
 
 inf "check needed applications"
-which gatling || err "gatling not installed - run 'apt-get install gatling'"
-which aplay   || err "aplay not installed - run 'apt-get install alsa-utils'"
+which gatling &> /dev/null || err "gatling not installed - run 'apt-get install gatling'"
+which aplay &> /dev/null   || err "aplay not installed - run 'apt-get install alsa-utils'"
 
 inf "download .zip from github.com"
-wget https://github.com/scolytus/draht/archive/master.zip -O "${ZIP}" || err "can't download draht.zip"
+wget -q https://github.com/scolytus/draht/archive/master.zip -O "${ZIP}" || err "can't download draht.zip"
 
 inf "install stuff"
-pushd $(mktemp -d)
-unzip "${ZIP}"
+pushd $(mktemp -d) &> /dev/null
+unzip -qq "${ZIP}"
 mv draht-master/* "${DEST}"
-popd
+popd &> /dev/null
 
 inf "add autostart to rc.local"
-sudo sed -i $'${/^[ \t]*exit[ \t]\+0/[ -f /home/pi/draht/system/rc.local.sh ] && /home/pi/draht/system/rc.local.sh\n}' /etc/rc.local
+sudo sed -i $'${/^[ \t]*exit[ \t]\+0/i[ -f /home/pi/draht/system/rc.local.sh ] && /home/pi/draht/system/rc.local.sh\n}' /etc/rc.local
 
 inf "DONE :)"
+inf "reboot your system and have fun!"
 
