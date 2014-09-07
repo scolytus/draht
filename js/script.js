@@ -1,4 +1,4 @@
-// Taken from:
+// Inspired by:
 // http://runnable.com/UhY_jE3QH-IlAAAP/how-to-parse-a-json-file-using-jquery
 
 //When DOM loaded we attach click event to button
@@ -16,7 +16,7 @@ $(document).ready(function() {
             dataType: "text",
             success: function(data) {
 
-                //data downloaded so we call parseJSON function 
+                //data downloaded so we call parseJSON function
                 //and pass downloaded data
                 var json = $.parseJSON(data);
 
