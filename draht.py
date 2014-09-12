@@ -78,6 +78,8 @@ class WirePlayer:
         self.error_sound = self.default_error_sound
         self.finish_sound = self.default_finish_sound
 
+        self.observers = []
+
         GPIO.add_event_detect(self.wire_chan, GPIO.RISING, callback=self, bouncetime=500)
 
     # --------------------------------------------------------------------------
@@ -131,6 +133,8 @@ class WirePlayer:
         else:
             raise Exception("Unknown State - dafuq?")
 
+        self.notify()
+
     # --------------------------------------------------------------------------
     def handle_events(self):
         play_sound = False
@@ -157,6 +161,13 @@ class WirePlayer:
 
     def result(self):
         return "%s in %f seconds with %d contacts" % (self.id, self.stop_time - self.start_time, self.contacts)
+
+    def register(self, observer):
+        self.observers.append(observer)
+
+    def notify(self):
+        for observer in self.observers:
+            observer.notify(self)
 
 # ------------------------------------------------------------------------------
 class WireGame:
@@ -225,6 +236,31 @@ class WireGameRound:
     def round_id(self):
         return "%s--%03d" % (time.strftime("%Y%m%d%H%M%S", time.gmtime(self.start)), self.round)
 
+# ------------------------------------------------------------------------------
+
+class PlayerLedObserver:
+
+    def __init__(self, red, yellow, green):
+        self.red = red
+        self.yellow = yellow
+        self.green = green
+
+    def notify(self, player):
+        out_r = GPIO.HIGH
+        out_y = GPIO.HIGH
+        out_g = GPIO.HIGH
+
+        if player.state == State.READY or player.state == State.INIT:
+            out_g = GPIO.LOW
+        elif player.state == State.PLAYING:
+            out_y = GPIO.LOW
+        elif player.state == State.FINISHED or player.state == State.WAIT:
+            out_r = GPIO.LOW
+
+        GPIO.output(self.red, out_r)
+        GPIO.output(self.yellow, out_y)
+        GPIO.output(self.green, out_g)
+
 # ==============================================================================
 # Start of script
 # ==============================================================================
@@ -249,6 +285,14 @@ P2_STRT = 19
 P2_WIRE = 21
 P2_STOP = 23
 
+RESET     = 24
+P1_GREEN  = 12
+P1_YELLOW =  8
+P1_RED    = 10
+P2_GREEN  = 22
+P2_YELLOW = 16
+P2_RED    = 18
+
 # Now we set the pins to be inputs and activate the
 # pull-down resistor for each pin.
 
@@ -256,10 +300,24 @@ for channel in [P1_STRT, P1_WIRE, P1_STOP, P2_STRT, P2_WIRE, P2_STOP]:
     logging.debug("set input pin %d" % channel)
     GPIO.setup(channel, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
+# Now we set the pins to be outputs and init them to high
+
+for channel in [P1_GREEN, P1_YELLOW, P1_RED, P2_GREEN, P2_YELLOW, P2_RED]:
+    logging.debug("set output pin %d" % channel)
+    GPIO.setup(channel, GPIO.OUT, initial=GPIO.HIGH)
+
 # Create the player objects
 
 p1 = WirePlayer("Player 1", P1_STRT, P1_WIRE, P1_STOP)
 p2 = WirePlayer("Player 2", P2_STRT, P2_WIRE, P2_STOP)
+
+# Create observer for status LEDs
+
+o1 = PlayerLedObserver(P1_RED, P1_YELLOW, P1_GREEN)
+p1.register(o1)
+
+o2 = PlayerLedObserver(P2_RED, P2_YELLOW, P2_GREEN)
+p2.register(o2)
 
 # customize settings
 
