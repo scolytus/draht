@@ -172,21 +172,28 @@ class WirePlayer:
 # ------------------------------------------------------------------------------
 class WireGame:
 
-    def __init__(self, players):
+    def __init__(self, players, reset):
         self.players = players
+        self.round = None
+
+        GPIO.add_event_detect(reset, GPIO.FALLING, callback=self, bouncetime=1000)
+
+    def __call__(self, channel):
+        logging.debug("reset event detected")
+        self.round.reset()
 
     def run(self):
         logging.info("Everything armed and ready - waiting for action")
         while True:
-            round = WireGameRound(self.players)
-            round.run()
-            filename = "/home/pi/draht/web/%s.json" % round.round_id()
-            linkname = "/home/pi/draht/web/latest.json"
-            with open(filename, "w") as f:
-                f.write(round.json())
-            unlink(linkname)
-            symlink(filename, linkname)
-            logging.debug("result JSON written to %s" % filename)
+            self.round = WireGameRound(self.players)
+            if self.round.run():
+                filename = "/home/pi/draht/web/%s.json" % self.round.round_id()
+                linkname = "/home/pi/draht/web/latest.json"
+                with open(filename, "w") as f:
+                    f.write(self.round.json())
+                unlink(linkname)
+                symlink(filename, linkname)
+                logging.debug("result JSON written to %s" % filename)
 
 # ------------------------------------------------------------------------------
 class WireGameRound:
@@ -198,6 +205,7 @@ class WireGameRound:
         self.players = players
         WireGameRound.round += 1
         self.status = []
+        self.rst = False
 
         for player in self.players:
             player.reset()
@@ -207,7 +215,13 @@ class WireGameRound:
 
     def run(self):
         finished = False
+
         while not finished:
+            if self.rst:
+                logging.info("Round #%d reset" % self.round)
+                self.rst = False
+                return False
+
             for idx, player in enumerate(self.players):
                 if not self.status[idx]:
                     player.step()
@@ -226,6 +240,8 @@ class WireGameRound:
         for player in self.players:
             logging.info("    %s" % player.result())
 
+        return True
+
     def json(self):
         result = {"start" : time.strftime("%d.%m.%Y %H:%M:%S", time.gmtime(self.start)), "round" : self.round, "results" : []}
         for player in self.players:
@@ -235,6 +251,10 @@ class WireGameRound:
 
     def round_id(self):
         return "%s--%03d" % (time.strftime("%Y%m%d%H%M%S", time.gmtime(self.start)), self.round)
+
+    def reset(self):
+        logging.debug("reset called")
+        self.rst = True
 
 # ------------------------------------------------------------------------------
 
@@ -296,7 +316,7 @@ P2_RED    = 18
 # Now we set the pins to be inputs and activate the
 # pull-down resistor for each pin.
 
-for channel in [P1_STRT, P1_WIRE, P1_STOP, P2_STRT, P2_WIRE, P2_STOP]:
+for channel in [P1_STRT, P1_WIRE, P1_STOP, P2_STRT, P2_WIRE, P2_STOP, RESET]:
     logging.debug("set input pin %d" % channel)
     GPIO.setup(channel, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -325,7 +345,7 @@ p2.register(o2)
 
 # create the game object
 
-game = WireGame([p1, p2])
+game = WireGame([p1, p2], RESET)
 
 # run :)
 
